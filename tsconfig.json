@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "strictFunctionTypes": false,
+        "target": "ES2019",
+        "module": "esnext",
+        "declaration": true,
+        "strict": true,
+        "jsx": "preserve",
+        "importHelpers": true,
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "noImplicitAny": false,
+        "baseUrl": ".",
+        "skipLibCheck": true,
+        "types": ["webpack-env", "vuetify"],
+        "paths": {
+            "@/*": ["src/*"]
+        },
+        "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests/**/*.ts", "tests/**/*.tsx"],
+    "exclude": ["node_modules"]
+}
