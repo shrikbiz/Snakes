@@ -17,7 +17,7 @@ import { getModule } from 'vuex-module-decorators';
 
 @Component({
     components: {
-        HomePage: () => import('@/views/HomePage.vue'),
+        HomePage: () => import('@/components/HomePage.vue'),
         Footer: () => import('@/components/Footer.vue'),
     },
 })
