@@ -34,8 +34,9 @@
                     padding: '0 !important',
                 }"
             >
+                <!-- food -->
                 <div
-                    v-if="shouldSnakeShow(row, col)"
+                    v-if="snakeRender(row, col)"
                     :style="{
                         maxWidth: `calc(${sizeConstant}rem - 2px)`,
                         maxHeight: `calc(${sizeConstant}rem - 2px)`,
@@ -46,9 +47,23 @@
                         background: 'red',
                     }"
                 >
-                    {{ row + ',' + col }}
+                    {{ foodRender(row, col) }}
                 </div>
-                <span v-else>{{ row + ',' + col }}</span>
+                <div
+                    v-else-if="foodRender(row, col)"
+                    :style="{
+                        maxWidth: `calc(${sizeConstant}rem - 2px)`,
+                        maxHeight: `calc(${sizeConstant}rem - 2px)`,
+                        minWidth: `calc(${sizeConstant}rem - 2px)`,
+                        minHeight: `calc(${sizeConstant}rem - 2px)`,
+                        width: `calc(${sizeConstant}rem - 2px)`,
+                        height: `calc(${sizeConstant}rem - 2px)`,
+                        background: 'yellow',
+                    }"
+                >
+                    {{ foodRender(row, col) }}
+                </div>
+                <span v-else>{{ foodRender(row, col) }}</span>
             </v-col>
         </v-row>
         <v-row align="center" justify="center">
@@ -62,7 +77,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Component, Emit, Prop } from 'vue-property-decorator';
-import { directive } from 'vue/types/umd';
+import { RandomFoodId } from '@/helper/index';
 
 interface Node {
     row: number;
@@ -93,6 +108,8 @@ export default class PlayGround extends Vue {
     currentDirection: Direction = 'right';
     timer: any;
     isStart: boolean = false;
+    food: string = RandomFoodId(this.playGroundSize);
+    score: number = 0;
 
     get snakePosition(): any {
         let position: any = new Set();
@@ -117,7 +134,6 @@ export default class PlayGround extends Vue {
             if (current.next.next === null) {
                 this.snake.tail = current;
                 this.snake.tail.next = null;
-                console.log(this.snake.tail);
                 break;
             }
             current = current.next;
@@ -130,16 +146,6 @@ export default class PlayGround extends Vue {
         this.snake.head.next = temp;
     }
     //LL methods ---End----
-
-    handleEatingFood() {
-        this.addNode(this.nextNode);
-    }
-
-    beforeMount() {
-        for (let i = 0; i < 6; i++) {
-            this.addNode(this.nextNode);
-        }
-    }
 
     get nextNode(): Node {
         let node: Node = {
@@ -157,7 +163,7 @@ export default class PlayGround extends Vue {
         window.addEventListener('keydown', e => this.handleKeyDown(e));
     }
 
-    shouldSnakeShow(row: number, col: number) {
+    snakeRender(row: number, col: number) {
         return this.snakePosition.has(`cel-${row}-${col}`);
     }
 
@@ -177,14 +183,32 @@ export default class PlayGround extends Vue {
     }
     onTick(): void {
         this.moveSnake(this.nextNode);
-        if (this.isOutOfGround)
-            this.snake.head = this.snake.tail = {
-                row: 5,
-                col: 5,
-                next: null,
-            };
+        this.foodCheck();
+        if (this.isOutOfGround) this.restart();
+    }
+
+    restart() {
+        this.snake.head = this.snake.tail = {
+            row: 5,
+            col: 5,
+            next: null,
+        };
     }
     //setInterval based function ---End----
+
+    //food & its position
+    foodRender = (row: number, col: number): boolean => {
+        return this.food === `cell-${row}-${col}`;
+    };
+
+    foodCheck() {
+        if (this.foodRender(this.snake.head.row, this.snake.head.col)) {
+            this.addNode(this.nextNode);
+            this.score++;
+            this.food = RandomFoodId(this.playGroundSize);
+        }
+    }
+    //food & its position ----End----
 
     onStart() {
         this.isStart = !this.isStart;
@@ -194,6 +218,8 @@ export default class PlayGround extends Vue {
             this.timer = null;
         }
     }
+
+    //random number function | thanks to Clement's code & stackoverflow
 }
 </script>
 

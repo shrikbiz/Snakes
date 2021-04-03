@@ -75,7 +75,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
-import { Fraction } from '@/helper/helperIndex';
+import { Fraction } from '@/helper';
 import { RGB, ColorName, ColorLists, ColorList, GetRGBList } from '@/helper/Colors';
 
 @Component({

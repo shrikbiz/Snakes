@@ -50,7 +50,7 @@ import vue from 'vue';
 import { Component } from 'vue-property-decorator';
 import RGBClass from '@/helper/ColorChange';
 import { RGB, ColorName, ColorLists, ColorList, GetRGBList } from '@/helper/Colors';
-import { Fraction } from '@/helper/helperIndex';
+import { Fraction } from '@/helper';
 
 @Component
 export default class FirstLook extends vue {
