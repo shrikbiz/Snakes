@@ -2,7 +2,7 @@
     <div>
         <v-row align="center" justify="center">
             <v-col>
-                <h1>Score:</h1>
+                <h1>Score:{{ score }}</h1>
             </v-col>
         </v-row>
         <v-row
@@ -29,7 +29,7 @@
                     minHeight: `${sizeConstant}rem`,
                     width: `${sizeConstant}rem`,
                     height: `${sizeConstant}rem`,
-                    background: 'green',
+                    background: platGroundColor(row, col),
                     border: 'solid white 1px',
                     padding: '0 !important',
                 }"
@@ -46,11 +46,9 @@
                         height: `calc(${sizeConstant}rem - 2px)`,
                         background: 'red',
                     }"
-                >
-                    {{ foodRender(row, col) }}
-                </div>
+                ></div>
                 <div
-                    v-else-if="foodRender(row, col)"
+                    v-else-if="`cell-${row}-${col}` === food"
                     :style="{
                         maxWidth: `calc(${sizeConstant}rem - 2px)`,
                         maxHeight: `calc(${sizeConstant}rem - 2px)`,
@@ -60,15 +58,15 @@
                         height: `calc(${sizeConstant}rem - 2px)`,
                         background: 'yellow',
                     }"
-                >
-                    {{ foodRender(row, col) }}
-                </div>
-                <span v-else>{{ foodRender(row, col) }}</span>
+                ></div>
             </v-col>
         </v-row>
         <v-row align="center" justify="center">
             <v-col>
-                <v-btn @click="onStart">Start</v-btn>
+                <v-btn @click="onStart">
+                    <span v-if="!isStart">Start</span>
+                    <span v-if="isStart">Pause</span>
+                </v-btn>
             </v-col>
         </v-row>
     </div>
@@ -110,21 +108,26 @@ export default class PlayGround extends Vue {
     isStart: boolean = false;
     food: string = RandomFoodId(this.playGroundSize);
     score: number = 0;
+    isRemoveTail: boolean = true;
 
     get snakePosition(): any {
         let position: any = new Set();
         let currentNode: any = this.snake.head;
         while (currentNode) {
-            position.add(`cel-${currentNode.row}-${currentNode.col}`);
+            position.add(`cell-${currentNode.row}-${currentNode.col}`);
             currentNode = currentNode.next;
         }
         return position;
     }
-    get isOutOfGround(): boolean {
+    get hitWall(): boolean {
         let current = this.snake.head;
         return (
             current.row < 1 || current.row > this.playGroundSize || current.col > this.playGroundSize || current.col < 1
         );
+    }
+
+    platGroundColor(row: number, col: number): string {
+        return (row + col) % 2 === 0 ? 'green' : 'darkGreen';
     }
 
     //LinkedList methods
@@ -164,7 +167,7 @@ export default class PlayGround extends Vue {
     }
 
     snakeRender(row: number, col: number) {
-        return this.snakePosition.has(`cel-${row}-${col}`);
+        return this.snakePosition.has(`cell-${row}-${col}`);
     }
 
     //handle key events
@@ -173,18 +176,25 @@ export default class PlayGround extends Vue {
         if (this.acceptingKeys.has(e.keyCode))
             this.currentDirection =
                 e.keyCode === 37 ? 'left' : e.keyCode === 39 ? 'right' : e.keyCode === 38 ? 'up' : 'down';
+        if (e.keyCode === 32) this.onStart();
     }
     //handle key events -----End-----
 
     //setInterval based function
-    moveSnake(node: Node) {
-        this.addNode(node);
-        this.removeTail();
+    moveSnake(): void {
+        this.addNode(this.nextNode);
+        if (this.isRemoveTail) this.removeTail();
     }
     onTick(): void {
-        this.moveSnake(this.nextNode);
         this.foodCheck();
-        if (this.isOutOfGround) this.restart();
+        if (this.isEatingItSelf) this.restart();
+        this.moveSnake();
+        if (this.hitWall) this.restart();
+        this.isRemoveTail = true;
+    }
+
+    get isEatingItSelf(): boolean {
+        return this.snakePosition.has(`cell-${this.nextNode.row}-${this.nextNode.col}`);
     }
 
     restart() {
@@ -193,6 +203,8 @@ export default class PlayGround extends Vue {
             col: 5,
             next: null,
         };
+        this.score = 0;
+        this.onStart();
     }
     //setInterval based function ---End----
 
@@ -202,24 +214,56 @@ export default class PlayGround extends Vue {
     };
 
     foodCheck() {
-        if (this.foodRender(this.snake.head.row, this.snake.head.col)) {
-            this.addNode(this.nextNode);
+        //foodRender is not working for reason unknown
+        let snakeHeadPos: string = `cell-${this.snake.head.row}-${this.snake.head.col}`;
+        if (this.food === snakeHeadPos) {
+            this.isRemoveTail = false;
             this.score++;
             this.food = RandomFoodId(this.playGroundSize);
+            this.checkFoodNotOnSnake(snakeHeadPos);
+        }
+    }
+
+    checkFoodNotOnSnake(snakeHeadPos: string): void {
+        let failSafe = this.playGroundSize * this.playGroundSize;
+        while (this.snakePosition.has(this.food) && failSafe > 0) {
+            this.food = RandomFoodId(this.playGroundSize);
+            failSafe--;
         }
     }
     //food & its position ----End----
 
     onStart() {
         this.isStart = !this.isStart;
-        if (this.isStart) this.timer = setInterval(this.onTick, 500);
+        if (this.isStart) this.timer = setInterval(this.onTick, 300);
         else {
             clearInterval(this.timer);
             this.timer = null;
         }
     }
 
-    //random number function | thanks to Clement's code & stackoverflow
+    /**
+     head:
+        border-all
+        border: none => for:
+            up=> down
+            down=> up
+            left=> right
+            right=> left
+    body:
+        border-all
+        border: non => for:
+            prev: 
+                not have border in direction of its previous node
+            next:
+                not have border in direction of its previous node
+    
+    tail: inherit body border propertier
+        next: 
+            no next available, so there should be a border
+
+
+     */
 }
 </script>
 
