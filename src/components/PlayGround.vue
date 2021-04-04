@@ -21,7 +21,7 @@
             <v-col
                 v-for="row in playGroundSize"
                 :key="row"
-                :id="`cell-${col}-${row}`"
+                :id="`cell-${row}-${col}`"
                 :style="{
                     maxWidth: `${sizeConstant}rem`,
                     maxHeight: `${sizeConstant}rem`,
@@ -37,6 +37,7 @@
                 <!-- food -->
                 <div
                     v-if="snakeRender(row, col)"
+                    :id="`snake-${row}-${col}`"
                     :style="{
                         maxWidth: `calc(${sizeConstant}rem - 2px)`,
                         maxHeight: `calc(${sizeConstant}rem - 2px)`,
@@ -101,7 +102,7 @@ type Direction = 'up' | 'down' | 'left' | 'right';
 export default class PlayGround extends Vue {
     playGroundSize: number = 10;
     sizeConstant: number = 3.5; //in rem
-    acceptingKeys = new Set([37, 38, 39, 40]);
+    acceptingKeys: Set<number> = new Set([37, 38, 39, 40]);
     snake = new LinkedList(3, 5);
     currentDirection: Direction = 'right';
     timer: any;
@@ -109,9 +110,22 @@ export default class PlayGround extends Vue {
     food: string = RandomFoodId(this.playGroundSize);
     score: number = 0;
     isRemoveTail: boolean = true;
+    oppositeDirection: Map<any, Direction> = new Map([
+        ['left', 'right'],
+        ['right', 'left'],
+        ['up', 'down'],
+        ['down', 'up'],
+    ]);
+    keyInfo: Map<number, Direction> = new Map([
+        [37, 'left'],
+        [39, 'right'],
+        [38, 'up'],
+        [40, 'down'],
+    ]);
 
-    get snakePosition(): any {
-        let position: any = new Set();
+    //Set of cells on which snake is
+    get snakePosition(): Set<string> {
+        let position: Set<string> = new Set();
         let currentNode: any = this.snake.head;
         while (currentNode) {
             position.add(`cell-${currentNode.row}-${currentNode.col}`);
@@ -119,6 +133,7 @@ export default class PlayGround extends Vue {
         }
         return position;
     }
+
     get hitWall(): boolean {
         let current = this.snake.head;
         return (
@@ -171,12 +186,19 @@ export default class PlayGround extends Vue {
     }
 
     //handle key events
-    handleKeyDown(e: any) {
+    handleKeyDown({ keyCode }: any) {
         //checking if the key pressed is left(37) | right(39) | up(38) | down(40)
-        if (this.acceptingKeys.has(e.keyCode))
-            this.currentDirection =
-                e.keyCode === 37 ? 'left' : e.keyCode === 39 ? 'right' : e.keyCode === 38 ? 'up' : 'down';
-        if (e.keyCode === 32) this.onStart();
+        if (this.acceptingKeys.has(keyCode)) {
+            if (
+                !(
+                    this.oppositeDirection.get(this.keyInfo.get(keyCode)) === this.currentDirection &&
+                    this.snakePosition.size > 1
+                )
+            )
+                this.currentDirection =
+                    keyCode === 37 ? 'left' : keyCode === 39 ? 'right' : keyCode === 38 ? 'up' : 'down';
+        }
+        if (keyCode === 32) this.onStart();
     }
     //handle key events -----End-----
 
@@ -190,7 +212,34 @@ export default class PlayGround extends Vue {
         if (this.isEatingItSelf) this.restart();
         this.moveSnake();
         if (this.hitWall) this.restart();
+        // this.giveSnakeBody();
         this.isRemoveTail = true;
+    }
+
+    giveSnakeBody() {
+        let current: Node | null | undefined = this.snake.head;
+        let counter = 0;
+        let previous: Node | null | undefined = current;
+        //edge case:
+        //if size of snake is 1
+        //if size of snake is 2
+        while (current) {
+            let cellId = `cell-${current.row}-${current.col}`;
+            let bodyId = `snake-${current.row}-${current.col}`;
+            // let cell: any = document.querySelector(`#${cellId}`);
+            let body: any = document.querySelector(`#${bodyId}`);
+            if (body) body.style.background = 'black';
+            // let bodyId = document.querySelector(`#${currentId}`);
+            // if (currentId === `snake-${this.snake.head.row}-${this.snake.head.row}`) {
+            //     //head
+            // } else if (currentId === `snake-${this.snake.tail.row}-${this.snake.tail.col}`) {
+            //     //tail
+            // } else {
+            // }
+            counter++;
+            previous = current;
+            current = current.next;
+        }
     }
 
     get isEatingItSelf(): boolean {
@@ -253,13 +302,13 @@ export default class PlayGround extends Vue {
     body:
         border-all
         border: non => for:
-            prev: 
+            prev:
                 not have border in direction of its previous node
             next:
                 not have border in direction of its previous node
-    
+
     tail: inherit body border propertier
-        next: 
+        next:
             no next available, so there should be a border
 
 
