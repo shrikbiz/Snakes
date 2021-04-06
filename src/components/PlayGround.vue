@@ -229,7 +229,7 @@ export default class PlayGround extends Vue {
     //handle key events
     handleKeyDown({ keyCode }: any) {
         //checking if the key pressed is left(37) | right(39) | up(38) | down(40)
-        if (this.acceptingKeys.has(keyCode)) {
+        if (this.acceptingKeys.has(keyCode) && this.isStart) {
             if (
                 !(
                     this.oppositeDirection.get(this.keyInfo.get(keyCode)) === this.currentDirection &&
