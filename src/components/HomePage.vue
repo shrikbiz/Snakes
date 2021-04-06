@@ -1,10 +1,12 @@
 <template>
     <div
-        style="max-height: calc(100vh - 56.8px); width: 100%; height: auto; margin-top: 5rem"
+        style="max-height: calc(100vh - 56.8px); width: 100%; height: auto; margin-top: 0"
         align="center"
         justify="center"
     >
-        <PlayGround />
+        <v-img height="calc(100vh - 56.8px)" src="@/assets/jungle.jpeg">
+            <PlayGround />
+        </v-img>
     </div>
 </template>
 
